@@ -1,6 +1,5 @@
 package com.example.querydsl.entity;
 
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.example.querydsl.entity.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -53,7 +53,7 @@ public class QueryBasicTest {
     @DisplayName("member1 찾기")
     void startQuerydsl() {
         queryFactory = new JPAQueryFactory(em);
-        QMember m = QMember.member;
+        QMember m = member;
 
         Member findMember = queryFactory
                 .select(m)
@@ -81,4 +81,23 @@ public class QueryBasicTest {
         assertThat(findMember.getName()).isEqualTo("member1");
     }
 
+
+    @Test
+    @DisplayName("Querydsl 조건 쿼리")
+    void searchCondition() {
+        member.name.eq("member1"); // username = 'member1'
+        member.name.ne("member1"); //username != 'member1'
+        member.name.eq("member1").not(); // username != 'member1'
+        member.name.isNotNull(); //이름이 is not null
+        member.age.in(10, 20); // age in (10,20)
+        member.age.notIn(10, 20); // age not in (10, 20)
+        member.age.between(10, 30); //between 10, 30
+        member.age.goe(30); // age >= 30
+        member.age.gt(30); // age > 30
+        member.age.loe(30); // age <= 30
+        member.age.lt(30); // age < 30
+        member.name.like("member%"); //like 검색
+        member.name.contains("member"); // like ‘%member%’ 검색
+        member.name.startsWith("member"); //like ‘member%’ 검색
+    }
 }
