@@ -1,5 +1,6 @@
 package com.example.querydsl.entity;
 
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,23 @@ public class QueryBasicTest {
                 .from(m)
                 .where(m.name.eq("member1")) // 파라미터 바인딩 처리
                 .fetchOne();
+
+        assertThat(findMember.getName()).isEqualTo("member1");
+    }
+
+    @Test
+    void startQtype() {
+        queryFactory = new JPAQueryFactory(em);
+
+        // 기본 인스턴스 사용
+        // QMember member = QMember.member;
+
+        // 별칭 직접 지정 - 셀프 조인이 아닌 이상 기본 인스턴스로 사용
+        QMember m1 = new QMember("m1");
+
+        Member findMember = queryFactory
+                .selectFrom(m1)
+                .where(m1.name.eq("member1")).fetchOne();
 
         assertThat(findMember.getName()).isEqualTo("member1");
     }
