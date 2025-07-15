@@ -1,5 +1,6 @@
 package com.example.querydsl.entity;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static com.example.querydsl.entity.QMember.member;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,5 +102,50 @@ public class QueryBasicTest {
         member.name.like("member%"); //like 검색
         member.name.contains("member"); // like ‘%member%’ 검색
         member.name.startsWith("member"); //like ‘member%’ 검색
+    }
+
+    @Test
+    @DisplayName("결과 조회 쿼리")
+    void resultQuery() {
+        queryFactory = new JPAQueryFactory(em);
+
+//        // 리스트 조회, 데이터 없으면 빈 리스트 반환
+//        List<Member> fetchList = queryFactory
+//                .selectFrom(member)
+//                .fetch();
+//
+//        // 단 건 조회, 결과가 없으면 null, 두 개 이상이면 NonUniqueResultException 발생
+//        Member fetchOne = queryFactory
+//                .selectFrom(member)
+//                .fetchOne();
+//
+//        // 첫 번째 결과 조회
+//        Member fetchFirst = queryFactory
+//                .selectFrom(member)
+//                .fetchFirst();
+
+        // 페이징 정보 포함, total count 쿼리 추가 실행(총 2회 쿼리 실행)
+        QueryResults<Member> fetchResults = queryFactory
+                .selectFrom(member)
+                .fetchResults();
+
+        List<Member> content = fetchResults.getResults();
+        assertThat(content.size()).isEqualTo(4);
+
+        long total = fetchResults.getTotal();
+        assertThat(total).isEqualTo(4);
+
+        long limit = fetchResults.getLimit();
+        System.out.println("limit = " + limit);
+
+        long offset = fetchResults.getOffset();
+        assertThat(offset).isEqualTo(0);
+
+        long totalCount = queryFactory
+                .selectFrom(member)
+                .fetchCount();
+
+        assertThat(totalCount).isEqualTo(4);
+
     }
 }
