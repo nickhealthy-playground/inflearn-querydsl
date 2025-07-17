@@ -26,6 +26,8 @@ public class QueryBasicTest {
 
     @BeforeEach
     void before() {
+        queryFactory = new JPAQueryFactory(em);
+
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
         em.persist(teamA);
@@ -175,5 +177,34 @@ public class QueryBasicTest {
         assertThat(member5.getName()).isEqualTo("member5");
         assertThat(member6.getName()).isEqualTo("member6");
         assertThat(memberNull.getName()).isNull();
+    }
+
+    /**
+     * 조회 건수 제한
+     */
+    @Test
+    void paging1() {
+        List<Member> result = queryFactory.selectFrom(member)
+                .orderBy(member.name.desc())
+                .offset(1) // 0부터 시작
+                .limit(2) // 최대 2건 조회
+                .fetch();
+
+        assertThat(result.size()).isEqualTo(2);
+    }
+
+    /*전체 조회 수가 필요할 때*/
+    @Test
+    void paging2() {
+        QueryResults<Member> fetchResults = queryFactory.selectFrom(member)
+                .orderBy(member.name.desc())
+                .offset(1)
+                .limit(2)
+                .fetchResults();
+
+        assertThat(fetchResults.getTotal()).isEqualTo(4);
+        assertThat(fetchResults.getLimit()).isEqualTo(2);
+        assertThat(fetchResults.getOffset()).isEqualTo(1);
+        assertThat(fetchResults.getResults().size()).isEqualTo(2);
     }
 }
