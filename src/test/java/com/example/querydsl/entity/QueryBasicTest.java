@@ -262,4 +262,44 @@ public class QueryBasicTest {
         assertThat(teamB.get(team.name)).isEqualTo("teamB");
         assertThat(teamB.get(member.age.avg())).isEqualTo(35);
     }
+
+    /**
+     * TeamA에 소속된 모든 회원
+     */
+    @Test
+    void join() {
+        List<Member> result = queryFactory
+                .select(member)
+                .from(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        assertThat(result).extracting("name").containsExactly("member1", "member2");
+
+        List<Member> result2 = queryFactory
+                .selectFrom(member)
+                .where(member.team.name.eq("teamA"))
+                .fetch();
+
+        assertThat(result2).extracting("name").containsExactly("member1", "member2");
+    }
+
+    /**
+     * 세타 조인(연관관계가 없는 필드로 조회)
+     * 회원의 이름이 팀 이름과 같은 회원 조회
+     */
+    @Test
+    void theta_join() {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+
+        List<Member> result = queryFactory
+                .select(member)
+                .from(member, team) // from 절에 여러 엔티티를 선택해서 세타 조인
+                .where(member.name.eq(team.name))
+                .fetch();
+
+        assertThat(result).extracting("name").containsExactly("teamA", "teamB");
+    }
 }
