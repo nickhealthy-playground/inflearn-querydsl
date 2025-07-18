@@ -302,4 +302,46 @@ public class QueryBasicTest {
 
         assertThat(result).extracting("name").containsExactly("teamA", "teamB");
     }
+
+    /**
+     * 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 전체 조회
+     * JPQL: SELECT m, t FROM Member m LEFT JOIN m.team t ON t.name = 'teamA'
+     * SQL: SELECT m.*, t.* FROM MEMBER m LEFT JOIN TEAM t ON m.TEAM_ID = t.id and t.name = 'teamA'
+     */
+    @Test
+    void join_on_filtering() {
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(member.team, team)
+                .on(team.name.eq("teamA"))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+    /**
+     * 연관관계 없는 엔티티 외부 조인
+     * 예) 회원의 이름과 팀의 이름이 같은 대상 외부 조인
+     * JPQL: SELECT m, t FROM Member m LEFT JOIN Team t ON m.name = t.name
+     * SQL: SELECT m.*, t.* FROM Member m LEFT JOIN Team t ON m.name = t.name
+     */
+    @Test
+    void join_on_no_relation() {
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team)
+                .on(member.name.eq(team.name))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
 }
