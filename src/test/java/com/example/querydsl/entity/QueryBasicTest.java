@@ -3,6 +3,7 @@ package com.example.querydsl.entity;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -490,5 +491,32 @@ public class QueryBasicTest {
         for (String s : result) {
             System.out.println("s = " + s);
         }
+    }
+
+    /**
+     * 상수, 문자 합치기
+     */
+    @Test
+    void constant() {
+        Tuple result = queryFactory
+                .select(member.age, Expressions.constant("A"))
+                .from(member)
+                .fetchFirst();
+
+        assertThat(result).extracting(
+                t -> t.get(member.age),
+                t -> t.get(Expressions.constant("A")))
+                .containsExactly(10, "A");
+    }
+
+    @Test
+    void concat() {
+        String username = queryFactory
+                .select(member.name.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .where(member.name.eq("member1"))
+                .fetchOne();
+
+        assertThat(username).isEqualTo("member1_10");
     }
 }
