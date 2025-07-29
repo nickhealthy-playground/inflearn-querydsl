@@ -4,6 +4,8 @@ import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -343,5 +345,42 @@ public class QueryBasicTest {
         for (Tuple tuple : result) {
             System.out.println("tuple = " + tuple);
         }
+    }
+
+    /**
+     * 패치 조인
+     */
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    void fetchJoinNo() {
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.name.eq("member1"))
+                .fetchOne();
+
+        // `emf.getPersistenceUnitUtil().isLoaded()` fetch join 로딩 여부 확인 가능
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).as("패치 조인 미적용").isFalse();
+    }
+
+    @Test
+    void fetchJoinUse() {
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin()
+                .where(member.name.eq("member1"))
+                .fetchOne();
+
+        // `emf.getPersistenceUnitUtil().isLoaded()` fetch join 로딩 여부 확인 가능
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember); // fetch join 로딩 여부 확인 가능
+        assertThat(loaded).as("패치 조인 적용").isTrue();
     }
 }
