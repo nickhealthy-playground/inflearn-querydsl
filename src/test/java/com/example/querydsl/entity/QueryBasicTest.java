@@ -519,4 +519,23 @@ public class QueryBasicTest {
 
         assertThat(username).isEqualTo("member1_10");
     }
+
+    /**
+     * Projection 기본
+     * 프로젝션: select 절에 대상 지정
+     */
+    @Test
+    void projectionTuple() {
+        List<Tuple> result = queryFactory
+                .select(member.name, member.age)
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.name);
+            System.out.println("username = " + username);
+            Integer age = tuple.get(member.age);
+            System.out.println("age = " + age);
+        }
+    }
 }
