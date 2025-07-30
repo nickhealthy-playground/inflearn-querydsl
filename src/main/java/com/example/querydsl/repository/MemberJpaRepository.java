@@ -1,7 +1,11 @@
 package com.example.querydsl.repository;
 
+import com.example.querydsl.dto.MemberSearchCondition;
+import com.example.querydsl.dto.MemberTeamDto;
+import com.example.querydsl.dto.QMemberTeamDto;
 import com.example.querydsl.entity.Member;
-import com.example.querydsl.entity.QMember;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
@@ -10,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.example.querydsl.entity.QMember.*;
+import static com.example.querydsl.entity.QTeam.*;
+import static org.springframework.util.StringUtils.*;
 
 @Repository
 public class MemberJpaRepository {
@@ -52,6 +58,50 @@ public class MemberJpaRepository {
         return queryFactory
                 .selectFrom(member)
                 .where(member.name.eq(name))
+                .fetch();
+    }
+
+    public List<MemberTeamDto> searchByBuilder(MemberSearchCondition condition) {
+        BooleanBuilder builder = new BooleanBuilder();
+        if (hasText(condition.getUsername())) {
+            builder.and(member.name.eq(condition.getUsername()));
+        }
+        if (hasText(condition.getTeamName())) {
+            builder.and(team.name.eq(condition.getTeamName()));
+        }
+        if (condition.getAgeGoe() != null) {
+            builder.and(member.age.goe(condition.getAgeGoe()));
+        }
+        if (condition.getAgeLoe() != null) {
+            builder.and(member.age.loe(condition.getAgeLoe()));
+        }
+
+        // Projection QueryDSL: DTO가 QueryDSL에 의존하는 것을 원치 않을 때 사용
+        // - 프로퍼티, 필드 접근, 생성자 중 택1 (현재 프로퍼티 방식 사용)
+//        return queryFactory
+//                .select(Projections.bean(
+//                        MemberTeamDto.class,
+//                        member.id.as("memberId"),
+//                        member.name.as("username"),
+//                        member.age,
+//                        team.id.as("teamId"),
+//                        team.name.as("teamName")))
+//                .from(member)
+//                .leftJoin(member.team, team)
+//                .where(builder)
+//                .fetch();
+
+        // @QueryProjection 사용
+        return queryFactory
+                .select(new QMemberTeamDto(
+                        member.id.as("memberId"),
+                        member.name.as("username"),
+                        member.age,
+                        team.id.as("teamId"),
+                        team.name.as("teamName")))
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(builder)
                 .fetch();
     }
 }
