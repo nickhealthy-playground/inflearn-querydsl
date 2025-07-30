@@ -1,6 +1,7 @@
 package com.example.querydsl.entity;
 
 import com.example.querydsl.dto.MemberDto;
+import com.example.querydsl.dto.QMemberDto;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
@@ -626,4 +627,24 @@ public class QueryBasicTest {
             System.out.println("memberDto = " + memberDto);
         }
     }
+
+    /**
+     * Projection - @QueryProjection
+     * - 생성자 + annotaiton 사용 방식
+     * - 이점: 생성자로 정확한 파라미터를 넘겨받기 때문에 컴파일 시점 에러 확인 가능
+     * - 단점: DTO가 QueryDSL에 의존, Q파일 빌드 및 생성 필요
+     */
+    @Test
+    void searchByQueryDSLAnnotation() {
+        List<MemberDto> result = queryFactory
+                .select(new QMemberDto(member.name, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+
 }
