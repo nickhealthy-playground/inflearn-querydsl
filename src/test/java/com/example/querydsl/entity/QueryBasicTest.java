@@ -761,4 +761,37 @@ public class QueryBasicTest {
 
         assertThat(count).isEqualTo(2);
     }
+
+    /**
+     * SQL function 호출하기
+     */
+    @Test
+    void sqlFunction1() {
+        // member -> M으로 변경 조회(replace) 함수 사용
+        List<String> fetch = queryFactory
+                .select(Expressions.stringTemplate("function('replace', {0}, {1}, {2})",
+                        member.name, "member", "M"))
+                .from(member)
+                .fetch();
+
+        for (String s : fetch) {
+            System.out.println("s = " + s);
+        }
+    }
+
+    @Test
+    void sqlFunction2() {
+        // 소문자로 변경해서 출력
+        List<String> result = queryFactory.
+                select(member.name)
+                .from(member)
+                .where(member.name.eq(member.name.lower())) // 아래와 같은 코드
+//                .where(member.name.eq(
+//                        Expressions.stringTemplate("function('lower', {0})", member.name)))
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
 }
