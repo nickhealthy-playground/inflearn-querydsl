@@ -1,7 +1,9 @@
 package com.example.querydsl.entity;
 
+import com.example.querydsl.dto.MemberDto;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -536,6 +538,92 @@ public class QueryBasicTest {
             System.out.println("username = " + username);
             Integer age = tuple.get(member.age);
             System.out.println("age = " + age);
+        }
+    }
+
+    /**
+     * Projection DTO 조회
+     */
+    @Test
+    void searchByJPQL() {
+        List<MemberDto> resultList = em.createQuery("select new com.example.querydsl.dto.MemberDto(m.name, m.age) from Member m", MemberDto.class)
+                .getResultList();
+
+        for (MemberDto memberDto : resultList) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    /**
+     * Projection QueryDSL
+     * - QueryDSL 빈 생성(Bean population)
+     *   - 3가지 방법 제공
+     *   - 프로퍼티 접근(setter), 필드 직접 접근, 생성자 사용
+     */
+    @Test
+    void searchByQueryDSLProperty() {
+        // 1. 프로퍼티 접근(setter)
+        List<MemberDto> result = queryFactory
+                .select(
+                        Projections.bean(MemberDto.class,
+                                member.name,
+                                member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    void searchByQueryDSLField() {
+        // 2. 필드 직접 접근(접근제어자 private도 접근 가능)
+        List<MemberDto> result = queryFactory
+                .select(
+                        Projections.fields(MemberDto.class,
+                                member.name,
+                                member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    void searchByQueryDSLConstructor() {
+        // 3. 생성자 접근 방식
+        List<MemberDto> result = queryFactory
+                .select(Projections.constructor(MemberDto.class,
+                        member.name, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    void diffAliasSearchProjection() {
+        // 별칭이 다를 때
+        QMember memberSub = new QMember("memberSub");
+
+        List<MemberDto> result = queryFactory
+                .select(
+                        Projections.fields(MemberDto.class,
+                                member.name.as("name"),
+                                Expressions.as(
+                                        JPAExpressions
+                                                .select(memberSub.age.max())
+                                                .from(memberSub), "age")
+                        )).from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
         }
     }
 }
