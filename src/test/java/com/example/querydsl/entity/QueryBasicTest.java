@@ -11,6 +11,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -712,4 +714,51 @@ public class QueryBasicTest {
         return usernameEq(usernameCond).and(ageEq(ageCond));
     }
 
+    /**
+     * 수정, 삭제 벌크 연산
+     */
+    @Test
+//    @Commit
+    void 업데이트_벌크연산_QueryDSL() {
+        long count = queryFactory
+                .update(member)
+                .set(member.name, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        assertThat(count).isEqualTo(2);
+    }
+
+    @Test
+    void 기존숫자에_더하기_별크연산_QueryDSL() {
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .where(member.age.lt(28))
+                .execute();
+
+        assertThat(count).isEqualTo(2);
+
+        // 벌크연산 시 영속성 컨텍스트를 거치지 않고, DB에 바로 적용되기 때문에 데이터 정합성 불일치 -> 영속성 컨텍스트 초기화 필요!
+        em.flush();
+        em.clear();
+
+        List<Member> members = queryFactory
+                .selectFrom(member)
+                .where(member.age.lt(28))
+                .fetch();
+
+        assertThat(members).extracting("age").containsExactly(11, 21);
+    }
+
+    @Test
+    @Commit
+    void 데이터삭제_벌크연산_QueryDSL() {
+        long count = queryFactory
+                .delete(member)
+                .where(member.age.lt(28))
+                .execute();
+
+        assertThat(count).isEqualTo(2);
+    }
 }
